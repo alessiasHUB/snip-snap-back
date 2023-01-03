@@ -9,6 +9,19 @@ app.use(express.json());
 app.use(cors());
 dotenv.config();
 
+interface PasteBinType {
+  id: number;
+  date: Date;
+  title: null | string
+  body: string;
+}
+
+interface PostType {
+  date: Date;
+  title: null | string
+  body: string;
+}
+
 const PORT_NUMBER = process.env.PORT ?? 4000;
 const client = new Client(process.env.DATABASE_URL)
 client.connect()
@@ -17,6 +30,60 @@ app.get("/", (req, res) => {
   const pathToFile = filePath("../public/index.html");
   res.sendFile(pathToFile);
 });
+
+app.get("/pastes", async (req, res) => {
+  try {
+    const queryResponse = await client.query(`
+SELECT *
+FROM paste_bin_data
+ORDER BY date desc
+LIMIT 10
+`)
+    const allPastes = queryResponse.rows
+    res.status(200).json(allPastes)
+  }
+  catch (error) {
+    console.error(error)
+    res.status(404).json({message: "internal error"})
+  }
+});
+
+app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
+  try {
+    const values = [req.body.body, req.body.title]
+    const queryResponse = await client.query(`
+    INSERT INTO paste_bin_data (body, title)
+    VALUES (
+      $1, $2
+    )
+    RETURNING *
+    `, values);
+    const createdPaste = queryResponse.rows[0]
+    res.status(200).json(createdPaste)
+  }
+  catch(error) {
+    console.error(error)
+    res.status(404).json({message: "internal error"})
+  }
+})
+
+app.get<{ id: string }>("/pastes/:id", async (req, res) => {
+  try {
+    const id = req.params.id
+    const values = [id]
+    const queryResponse = await client.query(`
+    SELECT *
+    FROM paste_bin_data
+    WHERE id = $1
+    `, values);
+    const singlePaste = queryResponse.rows[0]
+    res.status(200).json(singlePaste)
+  }
+  catch(error) {
+    console.error(error)
+    res.status(404).json({message: "internal error"})
+  }
+})
 
 app.listen(PORT_NUMBER, () => {
   console.log(`Server is listening on port ${PORT_NUMBER}!`);
