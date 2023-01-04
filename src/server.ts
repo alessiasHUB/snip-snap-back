@@ -45,30 +45,31 @@ SELECT *
 FROM paste_bin_data
 ORDER BY date desc
 LIMIT 10
-`)
-    const allPastes = queryResponse.rows
-    res.status(200).json(allPastes)
-  }
-  catch (error) {
-    console.error(error)
-    res.status(404).json({message: "internal error"})
+`);
+    const allPastes = queryResponse.rows;
+    res.status(200).json(allPastes);
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "internal error" });
   }
 });
 app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
   try {
-    const values = [req.body.pasteID, req.body.commentBody]
-    const queryResponse = await client.query(`
+    const values = [req.body.pasteID, req.body.commentBody];
+    const queryResponse = await client.query(
+      `
     INSERT INTO paste_comments (paste_id, comment_body)
     VALUES ($1, $2)
-    RETURNING *;`, [values[0], values[1]])
-    const postedComment = queryResponse.rows[0]
-    res.status(200).json(postedComment)
+    RETURNING *;`,
+      [values[0], values[1]]
+    );
+    const postedComment = queryResponse.rows[0];
+    res.status(200).json(postedComment);
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "internal error" });
   }
-  catch (error) {
-    console.error(error)
-    res.status(404).json({ message: "internal error" })
-  }
-})
+});
 
 app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
   try {
@@ -92,7 +93,7 @@ app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
     console.error(error);
     res.status(404).json({ message: "internal error" });
   }
-})
+});
 
 app.get<{ id: string }>("/pastes/:id", async (req, res) => {
   try {
@@ -112,7 +113,7 @@ app.get<{ id: string }>("/pastes/:id", async (req, res) => {
     console.error(error);
     res.status(404).json({ message: "internal error" });
   }
-})
+});
 
 app.listen(PORT_NUMBER, () => {
   console.log(`Server is listening on port ${PORT_NUMBER}!`);
