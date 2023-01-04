@@ -92,10 +92,6 @@ app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
     console.error(error);
     res.status(404).json({ message: "internal error" });
   }
-  catch(error) {
-    console.error(error)
-    res.status(404).json({message: "internal error"})
-  }
 })
 
 app.get<{ id: string }>("/pastes/:id", async (req, res) => {
@@ -115,10 +111,6 @@ app.get<{ id: string }>("/pastes/:id", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(404).json({ message: "internal error" });
-  }
-  catch(error) {
-    console.error(error)
-    res.status(404).json({message: "internal error"})
   }
 })
 
