@@ -16,11 +16,11 @@ interface PasteBinType {
   body: string;
 }
 
-interface PostType {
-  date: Date;
-  title: null | string;
-  body: string;
-}
+// interface PostType {
+//   date: Date;
+//   title: null | string;
+//   body: string;
+// }
 
 interface PasteComment {
   commentID: number;
@@ -53,6 +53,65 @@ LIMIT 10
     res.status(404).json({ message: "internal error" });
   }
 });
+
+app.get<{ id: string }>("/pastes/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const values = [id];
+    const queryResponse = await client.query(
+      `
+    SELECT *
+    FROM paste_bin_data
+    WHERE id = $1
+    `,
+      values
+    );
+    const singlePaste = queryResponse.rows[0];
+    res.status(200).json(singlePaste);
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "internal error" });
+  }
+});
+
+// GET all comments
+app.get("/comments", async (req, res) => {
+  try {
+    const queryResponse = await client.query(
+      `
+SELECT *
+FROM paste_comments
+`
+    );
+    const allComments = queryResponse.rows;
+    res.status(200).json(allComments);
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "internal error" });
+  }
+});
+
+//Requests all comments for a particular paste
+app.get("/comments/:pasteID", async (req, res) => {
+  try {
+    const values: number = parseInt(req.params.pasteID);
+    const queryResponse = await client.query(
+      `
+SELECT *
+FROM paste_comments
+WHERE paste_id = $1
+
+`,
+      [values]
+    );
+    const allComments = queryResponse.rows;
+    res.status(200).json(allComments);
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "internal error" });
+  }
+});
+
 app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
   try {
     const values = [req.body.pasteID, req.body.commentBody];
@@ -89,26 +148,6 @@ app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
     );
     const createdPaste = queryResponse.rows[0];
     res.status(200).json(createdPaste);
-  } catch (error) {
-    console.error(error);
-    res.status(404).json({ message: "internal error" });
-  }
-});
-
-app.get<{ id: string }>("/pastes/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const values = [id];
-    const queryResponse = await client.query(
-      `
-    SELECT *
-    FROM paste_bin_data
-    WHERE id = $1
-    `,
-      values
-    );
-    const singlePaste = queryResponse.rows[0];
-    res.status(200).json(singlePaste);
   } catch (error) {
     console.error(error);
     res.status(404).json({ message: "internal error" });
