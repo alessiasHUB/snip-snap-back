@@ -22,6 +22,13 @@ interface PostType {
   body: string;
 }
 
+interface PasteComment {
+  commentID: number;
+  pasteID: number;
+  commentBody: string;
+  date: Date;
+}
+
 const PORT_NUMBER = process.env.PORT ?? 4000;
 const client = new Client(process.env.DATABASE_URL)
 client.connect()
@@ -44,9 +51,42 @@ LIMIT 10
   }
   catch (error) {
     console.error(error)
-    res.status(404).json({message: "internal error"})
+    res.status(404).json({ message: "internal error" })
   }
 });
+//Requests all comments for a particular paste
+app.get("/comments/:pasteID", async (req, res) => {
+  console.log("Hello this is the id: ", req.params.pasteID)
+  try {
+    const values: number = parseInt(req.params.pasteID)
+    const queryResponse = await client.query(`
+SELECT *
+FROM paste_comments
+WHERE paste_id = $1
+`, [values])
+    const allComments = queryResponse.rows
+    res.status(200).json(allComments)
+  }
+  catch (error) {
+    console.error(error)
+    res.status(404).json({ message: "internal error" })
+  }
+});
+app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
+  try {
+    const values = [req.body.pasteID, req.body.commentBody]
+    const queryResponse = await client.query(`
+    INSERT INTO paste_comments (paste_id, comment_body)
+    VALUES ($1, $2)
+    RETURNING *;`, [values[0], values[1]])
+    const postedComment = queryResponse.rows[0]
+    res.status(200).json(postedComment)
+  }
+  catch (error) {
+    console.error(error)
+    res.status(404).json({ message: "internal error" })
+  }
+})
 
 app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
   try {
@@ -61,9 +101,9 @@ app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
     const createdPaste = queryResponse.rows[0]
     res.status(200).json(createdPaste)
   }
-  catch(error) {
+  catch (error) {
     console.error(error)
-    res.status(404).json({message: "internal error"})
+    res.status(404).json({ message: "internal error" })
   }
 })
 
@@ -79,9 +119,9 @@ app.get<{ id: string }>("/pastes/:id", async (req, res) => {
     const singlePaste = queryResponse.rows[0]
     res.status(200).json(singlePaste)
   }
-  catch(error) {
+  catch (error) {
     console.error(error)
-    res.status(404).json({message: "internal error"})
+    res.status(404).json({ message: "internal error" })
   }
 })
 
