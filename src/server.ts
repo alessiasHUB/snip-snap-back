@@ -16,12 +16,6 @@ interface PasteBinType {
   body: string;
 }
 
-// interface PostType {
-//   date: Date;
-//   title: null | string;
-//   body: string;
-// }
-
 interface PasteComment {
   commentID: number;
   pasteID: number;
@@ -91,21 +85,40 @@ FROM paste_comments
   }
 });
 
-//Requests all comments for a particular paste
-app.get("/comments/:pasteID", async (req, res) => {
+//Deletes Paste and its comments
+app.delete("/pastes/:id", async (req, res) => {
+  console.log("The id you are trying to delete is:", req.params.id)
   try {
-    const values: number = parseInt(req.params.pasteID);
+    const values: number[] = [parseInt(req.params.id)];
+    await client.query(
+      `
+DELETE FROM paste_comments
+WHERE paste_id = $1
+`, values);
+      const queryResponse = await client.query(`
+      DELETE FROM paste_bin_data
+      WHERE id = $1
+      RETURNING *`, values)
+    const deletedPaste = queryResponse.rows[0];
+    res.status(200).json(deletedPaste);
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "internal error" });
+  }
+});
+
+//Deletes all comments for a particular paste
+app.delete("/comments/:commentID", async (req, res) => {
+  try {
+    const values: number[] = [parseInt(req.params.commentID)];
     const queryResponse = await client.query(
       `
-SELECT *
-FROM paste_comments
-WHERE paste_id = $1
-
-`,
-      [values]
-    );
-    const allComments = queryResponse.rows;
-    res.status(200).json(allComments);
+DELETE FROM paste_comments
+WHERE comment_id = $1
+RETURNING *
+`, values);
+    const deletedComment = queryResponse.rows[0];
+    res.status(200).json(deletedComment);
   } catch (error) {
     console.error(error);
     res.status(404).json({ message: "internal error" });
@@ -153,6 +166,8 @@ app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
     res.status(404).json({ message: "internal error" });
   }
 });
+
+
 
 app.listen(PORT_NUMBER, () => {
   console.log(`Server is listening on port ${PORT_NUMBER}!`);
