@@ -75,6 +75,7 @@ app.get("/comments", async (req, res) => {
       `
 SELECT *
 FROM paste_comments
+ORDER BY date DESC
 `
     );
     const allComments = queryResponse.rows;
@@ -133,7 +134,7 @@ app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
     INSERT INTO paste_comments (paste_id, comment_body)
     VALUES ($1, $2)
     RETURNING *;`,
-      [values[0], values[1]]
+      values
     );
     const postedComment = queryResponse.rows[0];
     res.status(200).json(postedComment);
@@ -142,6 +143,17 @@ app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
     res.status(404).json({ message: "internal error" });
   }
 });
+
+// //leave a comment on a single paste
+// app.post<{}, {}, PasteComment>("/comments/:pasteID", async (req, res) => {
+//   try {
+//     const values = [req.body.pasteID, req.body.commentBody]
+//   }
+//   catch (error) {
+//     console.error(error);
+//     res.status(404).json({ message: "internal error" });
+// }
+// });
 
 app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
   try {
