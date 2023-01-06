@@ -167,6 +167,22 @@ app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
   }
 });
 
+app.put<{}, {}, PasteBinType>("/pastes", async (req, res) => {
+  try {
+  const values = [req.body.body, req.body.id]
+  const queryResponse = await client.query(`
+  UPDATE paste_bin_data
+SET body = $1
+WHERE id = $2
+RETURNING *
+  `, values)
+  res.status(200).json(queryResponse.rows)
+  }
+  catch (error) {
+    res.status(404).json({ message: 'internal error'})
+  }
+})
+
 
 
 app.listen(PORT_NUMBER, () => {
