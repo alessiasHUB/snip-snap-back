@@ -86,6 +86,27 @@ ORDER BY post_date DESC
   }
 });
 
+// GET comments for specific snip snap
+app.get("/comments/:snip_snap_id", async (req, res) => {
+  try {
+    const values = [req.params.snip_snap_id];
+    const queryResponse = await client.query(
+      `
+SELECT *
+FROM snip_snap_comments
+WHERE snip_snap_id = $1
+ORDER BY post_date DESC
+`,
+      values
+    );
+    const allComments = queryResponse.rows;
+    res.status(200).json(allComments);
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({ message: "internal error" });
+  }
+});
+
 //Deletes Paste and its comments
 app.delete("/snip_snaps/:id", async (req, res) => {
   console.log("The id you are trying to delete is:", req.params.id);
