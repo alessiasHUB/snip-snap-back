@@ -11,7 +11,7 @@ dotenv.config();
 
 interface SnipSnapType {
   id: number;
-  date: Date;
+  post_date: Date;
   title: null | string;
   body: string;
 }
@@ -20,7 +20,7 @@ interface PasteComment {
   commentID: number;
   snipSnapID: number;
   commentBody: string;
-  date: Date;
+  post_date: Date;
 }
 
 const PORT_NUMBER = process.env.PORT ?? 4000;
@@ -37,7 +37,7 @@ app.get("/snip_snaps", async (req, res) => {
     const queryResponse = await client.query(`
 SELECT *
 FROM snip_snaps
-ORDER BY date desc
+ORDER BY post_date desc
 LIMIT 10
 `);
     const allPastes = queryResponse.rows;
@@ -74,8 +74,8 @@ app.get("/comments", async (req, res) => {
     const queryResponse = await client.query(
       `
 SELECT *
-FROM snip_snapcomments
-ORDER BY date DESC
+FROM snip_snap_comments
+ORDER BY post_date DESC
 `
     );
     const allComments = queryResponse.rows;
@@ -94,7 +94,7 @@ app.delete("/snip_snaps/:id", async (req, res) => {
     await client.query(
       `
 DELETE FROM snip_snapcomments
-WHERE snip_snapid = $1
+WHERE snip_snap_id = $1
 `,
       values
     );
@@ -119,7 +119,7 @@ app.delete("/comments/:commentID", async (req, res) => {
     const values: number[] = [parseInt(req.params.commentID)];
     const queryResponse = await client.query(
       `
-DELETE FROM snip_snapcomments
+DELETE FROM snip_snap_comments
 WHERE comment_id = $1
 RETURNING *
 `,
@@ -138,7 +138,7 @@ app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
     const values = [req.body.snipSnapID, req.body.commentBody];
     const queryResponse = await client.query(
       `
-    INSERT INTO snip_snapcomments (snip_snapid, comment_body)
+    INSERT INTO snip_snap_comments (snip_snap_id, comment_body)
     VALUES ($1, $2)
     RETURNING *;`,
       values

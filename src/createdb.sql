@@ -6,26 +6,27 @@ DROP TABLE IF EXISTS snip_snaps;
 /*----------SNIP SNAP TABLE----------*/
 CREATE TABLE snip_snaps (
   id SERIAL PRIMARY KEY,
-  date date,
+  post_date timestamp DEFAULT CURRENT_TIMESTAMP,
   title VARCHAR(255) DEFAULT NULL,
-  body VARCHAR(255) NOT NULL);
+  body VARCHAR(500) NOT NULL);
 
 /*----------COMMENTS TABLE----------*/
 CREATE TABLE snip_snap_comments (
  comment_id SERIAL PRIMARY KEY,
  snip_snap_id INT,
  comment_body VARCHAR(255) NOT NULL,
+ post_date timestamp DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (snip_snap_id) REFERENCES snip_snaps(id));
 
 
 /*----------INSERT STATEMENTS----------*/
-INSERT INTO snip_snaps (date, title, body)
+INSERT INTO snip_snaps (title, body)
 VALUES 
-('2022-01-01', 'First Paste', 'This is my first snip snap.'),
-('2022-02-01', 'Second Paste', 'This is my second snip snap.'),
-('2022-03-01', 'Third Paste', 'This is my third snip snap.'),
-('2022-04-01', 'Fourth Paste', 'This is my fourth snip snap.'),
-('2022-05-01', 'Fifth Paste', 'This is my fifth snip snap.');
+('First Paste', 'This is my first snip snap.'),
+('Second Paste', 'This is my second snip snap.'),
+('Third Paste', 'This is my third snip snap.'),
+('Fourth Paste', 'This is my fourth snip snap.'),
+('Fifth Paste', 'This is my fifth snip snap.');
 
 INSERT INTO snip_snap_comments (snip_snap_id, comment_body)
 VALUES 
