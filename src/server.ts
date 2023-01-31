@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(cors());
 dotenv.config();
 
-interface PasteBinType {
+interface SnipSnapType {
   id: number;
   date: Date;
   title: null | string;
@@ -18,7 +18,7 @@ interface PasteBinType {
 
 interface PasteComment {
   commentID: number;
-  pasteID: number;
+  snipSnapID: number;
   commentBody: string;
   date: Date;
 }
@@ -32,11 +32,11 @@ app.get("/", (req, res) => {
   res.sendFile(pathToFile);
 });
 
-app.get("/pastes", async (req, res) => {
+app.get("/snip_snaps", async (req, res) => {
   try {
     const queryResponse = await client.query(`
 SELECT *
-FROM paste_bin_data
+FROM snip_snaps
 ORDER BY date desc
 LIMIT 10
 `);
@@ -48,20 +48,20 @@ LIMIT 10
   }
 });
 
-app.get<{ id: string }>("/pastes/:id", async (req, res) => {
+app.get<{ id: string }>("/snip_snaps/:id", async (req, res) => {
   try {
     const id = req.params.id;
     const values = [id];
     const queryResponse = await client.query(
       `
     SELECT *
-    FROM paste_bin_data
+    FROM snip_snaps
     WHERE id = $1
     `,
       values
     );
-    const singlePaste = queryResponse.rows[0];
-    res.status(200).json(singlePaste);
+    const singleSnipSnap = queryResponse.rows[0];
+    res.status(200).json(singleSnipSnap);
   } catch (error) {
     console.error(error);
     res.status(404).json({ message: "internal error" });
@@ -74,7 +74,7 @@ app.get("/comments", async (req, res) => {
     const queryResponse = await client.query(
       `
 SELECT *
-FROM paste_comments
+FROM snip_snapcomments
 ORDER BY date DESC
 `
     );
@@ -87,19 +87,24 @@ ORDER BY date DESC
 });
 
 //Deletes Paste and its comments
-app.delete("/pastes/:id", async (req, res) => {
-  console.log("The id you are trying to delete is:", req.params.id)
+app.delete("/snip_snaps/:id", async (req, res) => {
+  console.log("The id you are trying to delete is:", req.params.id);
   try {
     const values: number[] = [parseInt(req.params.id)];
     await client.query(
       `
-DELETE FROM paste_comments
-WHERE paste_id = $1
-`, values);
-      const queryResponse = await client.query(`
-      DELETE FROM paste_bin_data
+DELETE FROM snip_snapcomments
+WHERE snip_snapid = $1
+`,
+      values
+    );
+    const queryResponse = await client.query(
+      `
+      DELETE FROM snip_snaps
       WHERE id = $1
-      RETURNING *`, values)
+      RETURNING *`,
+      values
+    );
     const deletedPaste = queryResponse.rows[0];
     res.status(200).json(deletedPaste);
   } catch (error) {
@@ -108,16 +113,18 @@ WHERE paste_id = $1
   }
 });
 
-//Deletes all comments for a particular paste
+//Deletes all comments for a particular snip snap
 app.delete("/comments/:commentID", async (req, res) => {
   try {
     const values: number[] = [parseInt(req.params.commentID)];
     const queryResponse = await client.query(
       `
-DELETE FROM paste_comments
+DELETE FROM snip_snapcomments
 WHERE comment_id = $1
 RETURNING *
-`, values);
+`,
+      values
+    );
     const deletedComment = queryResponse.rows[0];
     res.status(200).json(deletedComment);
   } catch (error) {
@@ -128,10 +135,10 @@ RETURNING *
 
 app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
   try {
-    const values = [req.body.pasteID, req.body.commentBody];
+    const values = [req.body.snipSnapID, req.body.commentBody];
     const queryResponse = await client.query(
       `
-    INSERT INTO paste_comments (paste_id, comment_body)
+    INSERT INTO snip_snapcomments (snip_snapid, comment_body)
     VALUES ($1, $2)
     RETURNING *;`,
       values
@@ -144,10 +151,10 @@ app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
   }
 });
 
-// //leave a comment on a single paste
-// app.post<{}, {}, PasteComment>("/comments/:pasteID", async (req, res) => {
+// //leave a comment on a single snip snap
+// app.post<{}, {}, PasteComment>("/comments/:snipSnapID", async (req, res) => {
 //   try {
-//     const values = [req.body.pasteID, req.body.commentBody]
+//     const values = [req.body.snipSnapID, req.body.commentBody]
 //   }
 //   catch (error) {
 //     console.error(error);
@@ -155,7 +162,7 @@ app.post<{}, {}, PasteComment>("/comments", async (req, res) => {
 // }
 // });
 
-app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
+app.post<{}, {}, SnipSnapType>("/snip_snaps", async (req, res) => {
   try {
     let values = [req.body.body, req.body.title];
     if (!req.body.title) {
@@ -163,7 +170,7 @@ app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
     }
     const queryResponse = await client.query(
       `
-    INSERT INTO paste_bin_data (body, title)
+    INSERT INTO snip_snaps (body, title)
     VALUES (
       $1, $2
     )
@@ -179,23 +186,23 @@ app.post<{}, {}, PasteBinType>("/pastes", async (req, res) => {
   }
 });
 
-app.put<{}, {}, PasteBinType>("/pastes", async (req, res) => {
+app.put<{}, {}, SnipSnapType>("/snip_snaps", async (req, res) => {
   try {
-  const values = [req.body.body, req.body.id]
-  const queryResponse = await client.query(`
-  UPDATE paste_bin_data
+    const values = [req.body.body, req.body.id];
+    const queryResponse = await client.query(
+      `
+  UPDATE snip_snaps
 SET body = $1
 WHERE id = $2
 RETURNING *
-  `, values)
-  res.status(200).json(queryResponse.rows)
+  `,
+      values
+    );
+    res.status(200).json(queryResponse.rows);
+  } catch (error) {
+    res.status(404).json({ message: "internal error" });
   }
-  catch (error) {
-    res.status(404).json({ message: 'internal error'})
-  }
-})
-
-
+});
 
 app.listen(PORT_NUMBER, () => {
   console.log(`Server is listening on port ${PORT_NUMBER}!`);
